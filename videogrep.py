@@ -102,30 +102,29 @@ def play_clips(clips, ending_mode):
         
         pipe_name = "\\\\.\pipe\mpv-pipe"
         cmd = ["mpv", "--idle=once", "--force-window=no", "--input-ipc-server=%s" % pipe_name]
-        p = subprocess.Popen(cmd, shell=False)
-
-        time.sleep(0.5) # wait 0.5 seconds for pipe has been created
         
-        if not os.path.isfile(pipe_name):
-            print "Can't open '%s'" % pipe_name
-            return
-        else:
-            for clip_filename, clip_start, clip_end in clips:
-                clip_filename = clip_filename.replace("\\","/")
-                
-                cmd = ["echo", "loadfile", '"' + clip_filename + '"']
-                if ending_mode:
-                    cmd.append("append-play start=%s,end=%s" % (clip_start, clip_end))
-                else:
-                    cmd.append("append-play start=%s" % clip_start)
-                
-                try:
-                    with open(pipe_name, "w") as mpv_pipe:
-                        subprocess.call(cmd, stdout=mpv_pipe)
-                except IOError as ex:
-                    print ex
+        p = None
+        if not os.path.exists(pipe_name): # pipe doesn't exist
+            p = subprocess.Popen(cmd, shell=False)
+            time.sleep(0.5) # wait 0.5 seconds for pipe has been created
+        
+        for clip_filename, clip_start, clip_end in clips:
+            clip_filename = clip_filename.replace("\\","/")
+            
+            cmd = ["echo", "loadfile", '"' + clip_filename + '"']
+            if ending_mode:
+                cmd.append("append-play start=%s,end=%s" % (clip_start, clip_end))
+            else:
+                cmd.append("append-play start=%s" % clip_start)
+            
+            try:
+                with open(pipe_name, "w") as mpv_pipe:
+                    subprocess.call(cmd, stdout=mpv_pipe)
+            except IOError as ex:
+                print ex
+                if p != None:
                     p.kill()
-                    return
+                return
 
 def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode):
     cmd = " ".join(["grep", "-r", "-n", "-i", "--include", "\*.txt", "-P", '"' + search_phrase + '"', '"' + media_dir + '"'])
