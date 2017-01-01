@@ -120,6 +120,7 @@ def play_clips(clips, ending_mode):
             try:
                 with open(pipe_name, "w") as mpv_pipe:
                     subprocess.call(cmd, stdout=mpv_pipe)
+                    time.sleep(0.05) # to preserve insertion order in mpv playlist 
             except IOError as ex:
                 print ex
                 if p != None:
