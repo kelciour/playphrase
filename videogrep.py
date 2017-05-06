@@ -261,7 +261,7 @@ def convert_to_unicode(file_content):
     print "ERROR: Unknown encoding. Use srt file with 'utf-8' encoding."
     return (False, file_content)
 
-def init(media_dir):
+def init(media_dir, limit):
     for root, dirs, files in os.walk(media_dir):
         for file in files:
             file_ext = file.split('.')[-1]
@@ -279,7 +279,7 @@ def init(media_dir):
                         sys.exit(1)
 
                 subs = read_subtitles(content)
-                subs = convert_into_sentences(subs, 20)
+                subs = convert_into_sentences(subs, limit)
 
                 write_subtitles(file_path[:-4] + ".txt", subs)
 
@@ -292,7 +292,7 @@ def parse_args(argv):
         print "Search phrase can't be empty"
         sys.exit()
 
-    args = {"padding": 0, "limit": 30, "output_file": None, "phrase_mode": False, "phrases_gap":1.75, "search_phrase":search_phrase, "ending_mode":False, "randomize_mode":False, "demo_mode":False}
+    args = {"padding": 0, "limit": 15, "output_file": None, "phrase_mode": False, "phrases_gap":1.75, "search_phrase":search_phrase, "ending_mode":False, "randomize_mode":False, "demo_mode":False}
     
     argv = argv[:-1]
     idx = 0
@@ -362,7 +362,7 @@ if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     if args != False:
         if args["search_phrase"] == "_init_":
-            init(args["media_dir"])
+            init(args["media_dir"], args["limit"])
         else:
             if need_update(args["media_dir"]):
                 print "WARNING: number of '.srt' and '.txt' files doesn't match. Maybe you need to use 'videogrep <media_dir> _init_'."
