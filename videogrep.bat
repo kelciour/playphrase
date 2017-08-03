@@ -8,7 +8,7 @@ for /L %%n in (1,0,1) do (
   if /I "!phrase!"=="q" call :stop
   if /I "!phrase!"=="x" call :stop
   if /I "!phrase!"=="exit" call :stop
-  python videogrep.py --input %media_dir% "!phrase!"
+  python playphrase.py --input %media_dir% "!phrase!"
 )
 
 :stop
