@@ -75,6 +75,7 @@ def convert_into_sentences(en_subs, limit):
                 prev_sub_content[-1] != ']' and
                 prev_sub_content[-1] != ')' and
                 prev_sub_content[-1] != u'♪' and
+                prev_sub_content[-1] != u'”' and
                 prev_sub_content[-1] != '"'):
 
                 subs[-1] = (prev_sub_start, sub_end, prev_sub_content + " " + sub_content)
