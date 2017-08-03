@@ -10,7 +10,7 @@ import time
 
 from collections import OrderedDict
 
-movie_extensions = ['mp4', 'avi', 'mkv']
+movie_extensions = ['mp4', 'avi', 'mkv', 'mp3']
 srt_encodings = ["utf-8", "cp1251"]
 
 def srt_time_to_seconds(time):
