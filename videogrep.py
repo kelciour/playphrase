@@ -96,13 +96,28 @@ def write_subtitles(filename, subs):
     
     f.close()
 
-def play_clips(clips, ending_mode):
+def play_clips(clips, ending_mode, mpv_options):
     if len(clips) != 0:
         clip_filename, clip_start, clip_end = clips[0]
         
         pipe_name = "\\\\.\pipe\mpv-pipe"
-        cmd = ["mpv", "--idle=once", "--force-window=no", "--input-ipc-server=%s" % pipe_name]
-        
+
+        cmd_options = { "--idle":"once", "--force-window":"no", "--input-ipc-server":pipe_name }
+
+        for opt in mpv_options.split():
+            if "=" in opt:
+                key, value = opt.split("=", 1)
+                cmd_options[key] = value
+            else:
+                cmd_options[opt] = True
+
+        cmd = ["mpv"]
+        for opt in cmd_options:
+            if cmd_options[opt] == True:
+                cmd.append(opt)
+            else:
+                cmd.append(opt + "=" + cmd_options[opt])
+
         p = None
         if not os.path.exists(pipe_name): # pipe doesn't exist
             p = subprocess.Popen(cmd, shell=False)
@@ -127,7 +142,7 @@ def play_clips(clips, ending_mode):
                     p.kill()
                 return
 
-def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode):
+def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options):
     cmd = " ".join(["grep", "-r", "-n", "-i", "--include", "\*.txt", "-P", '"' + search_phrase + '"', '"' + media_dir + '"'])
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1)
     output, error = p.communicate()
@@ -228,7 +243,7 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
             random.shuffle(clips)
 
         if not demo_mode:
-            play_clips(clips, ending_mode)
+            play_clips(clips, ending_mode, mpv_options)
 
     elif p.returncode == 1:
         print "'%s' is not found in '%s'" % (search_phrase, media_dir)
@@ -292,7 +307,7 @@ def parse_args(argv):
         print "Search phrase can't be empty"
         sys.exit()
 
-    args = {"padding": 0, "limit": 15, "output_file": None, "phrase_mode": False, "phrases_gap":1.75, "search_phrase":search_phrase, "ending_mode":False, "randomize_mode":False, "demo_mode":False}
+    args = {"padding": 0, "limit": 15, "output_file": None, "phrase_mode": False, "phrases_gap":1.75, "search_phrase":search_phrase, "ending_mode":False, "randomize_mode":False, "demo_mode":False, "mpv_options":""}
     
     argv = argv[:-1]
     idx = 0
@@ -332,6 +347,11 @@ def parse_args(argv):
                     idx += 1
                 except ValueError:
                     pass
+        elif argv[idx] == "--mpv" or argv[idx] == "-m":
+            if idx + 1 >= len(argv):
+                return False
+            args["mpv_options"] = argv[idx + 1]
+            idx += 1
         else:
             return False
 
@@ -354,6 +374,7 @@ def usage():
     print "-r, --randomize", "\t", "randomize the clips"
     print "-o, --output", "\t", "name of the file in which output of \'grep\' command will be written"
     print "-d, --demo", "\t", "only show grep results"
+    print "-m, --mpv OPTIONS", "\t", "mpv player options"
 
 if __name__ == '__main__':
     os.environ["PATH"] += os.pathsep + "." + os.sep + "utils" + os.sep + "grep"
@@ -367,6 +388,6 @@ if __name__ == '__main__':
             if need_update(args["media_dir"]):
                 print "WARNING: number of '.srt' and '.txt' files doesn't match. Maybe you need to use 'videogrep <media_dir> _init_'."
             
-            main(args["media_dir"], args["search_phrase"], args["phrase_mode"], args["phrases_gap"], args["padding"], args["limit"], args["output_file"], args["ending_mode"], args["randomize_mode"], args["demo_mode"])
+            main(args["media_dir"], args["search_phrase"], args["phrase_mode"], args["phrases_gap"], args["padding"], args["limit"], args["output_file"], args["ending_mode"], args["randomize_mode"], args["demo_mode"], args["mpv_options"])
     else:
         usage()
