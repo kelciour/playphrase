@@ -348,7 +348,7 @@ def parse_args(argv):
                     idx += 1
                 except ValueError:
                     pass
-        elif argv[idx] == "--mpv" or argv[idx] == "-m":
+        elif argv[idx] == "--mpv-options" or argv[idx] == "-m":
             if idx + 1 >= len(argv):
                 return False
             args["mpv_options"] = argv[idx + 1]
@@ -375,7 +375,7 @@ def usage():
     print "-r, --randomize", "\t", "randomize the clips"
     print "-o, --output", "\t", "name of the file in which output of \'grep\' command will be written"
     print "-d, --demo", "\t", "only show grep results"
-    print "-m, --mpv OPTIONS", "\t", "mpv player options"
+    print "-m, --mpv-options OPTIONS", "\t", "mpv player options"
 
 if __name__ == '__main__':
     os.environ["PATH"] += os.pathsep + "." + os.sep + "utils" + os.sep + "grep"
