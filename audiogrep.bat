@@ -10,9 +10,9 @@ for /L %%n in (1,0,1) do (
   if /I "!phrase!"=="exit" call :stop
   
   rem Create a window even if there is no album cover art and disable album cover art.
-  rem python playphrase.py --mpv-options "--video=no --force-window=yes -af=drc --osc=no --title=${filename}" --input %media_dir% "!phrase!"
+  rem python playphrase.py --mpv-options "--video=no --force-window=yes --osc=no --title=${filename}" --input %media_dir% "!phrase!"
 
-  python playphrase.py --mpv-options "--sub-font-size=37 --sub-back-color=0.05/0.9 --sub-scale-by-window=no --sub-scale-with-window=no --autofit=620 -af=drc --osc=no --title=${filename}" --input %media_dir% "!phrase!"
+  python playphrase.py --mpv-options "--sub-font-size=37 --sub-back-color=0.05/0.9 --sub-scale-by-window=no --sub-scale-with-window=no --autofit=620 --osc=no --title=${filename}" --input %media_dir% "!phrase!"
 )
 
 :stop
