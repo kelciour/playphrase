@@ -97,55 +97,63 @@ def write_subtitles(filename, subs):
     
     f.close()
 
+def update_mpv_player_cmd(cmd_options, mpv_options):
+    for opt in mpv_options.split():
+        if "=" in opt:
+            key, value = opt.split("=", 1)
+            cmd_options[key] = value
+        else:
+            cmd_options[opt] = True
+
+    cmd = ["mpv"]
+    for opt in cmd_options:
+        if cmd_options[opt] == True:
+            cmd.append(opt)
+        else:
+            cmd.append(opt + "=" + cmd_options[opt])
+
+    return cmd
+
 def play_clips(clips, ending_mode, mpv_options):
     if len(clips) != 0:
         clip_filename, clip_start, clip_end = clips[0]
         
-        pipe_name = "\\\\.\pipe\mpv-pipe"
+        pipe_name = "mpv-pipe"
 
-        cmd_options = { "--idle":"once", "--force-window":"no", "--input-ipc-server":pipe_name }
+        mpv_default_options = { "--idle":"once", "--no-terminal":True, "--force-window":"no", "--input-file":pipe_name }
 
-        for opt in mpv_options.split():
-            if "=" in opt:
-                key, value = opt.split("=", 1)
-                cmd_options[key] = value
-            else:
-                cmd_options[opt] = True
+        cmd = update_mpv_player_cmd(mpv_default_options, mpv_options)
 
-        cmd = ["mpv"]
-        for opt in cmd_options:
-            if cmd_options[opt] == True:
-                cmd.append(opt)
-            else:
-                cmd.append(opt + "=" + cmd_options[opt])
+        with open(pipe_name, 'w'): # create pipe
+            pass
 
-        p = None
-        if not os.path.exists(pipe_name): # pipe doesn't exist
-            p = subprocess.Popen(cmd, shell=False)
-            time.sleep(0.5) # wait 0.5 seconds for pipe has been created
+        p = subprocess.Popen(cmd, shell=False) # start mpv player in idle mode
         
-        for clip_filename, clip_start, clip_end in clips:
-            clip_filename = clip_filename.replace("\\","/")
-            
-            cmd = ["echo", "loadfile", '"' + clip_filename + '"']
-            if ending_mode:
-                cmd.append("append-play start=%s,end=%s" % (clip_start, clip_end))
-            else:
-                cmd.append("append-play start=%s" % clip_start)
-            
-            try:
-                with open(pipe_name, "w") as mpv_pipe:
-                    subprocess.call(cmd, stdout=mpv_pipe)
-                    time.sleep(0.05) # to preserve insertion order in mpv playlist 
-            except IOError as ex:
-                print ex
-                if p != None:
-                    p.kill()
-                return
+        with open(pipe_name, "wb", 0) as f_pipe:
+            for clip_filename, clip_start, clip_end in clips:
+                clip_filename = clip_filename.replace("\\","/")
+                
+                cmd = ["loadfile", '"' + clip_filename + '"']
+                if ending_mode:
+                    cmd.append("append-play start=%s,end=%s" % (clip_start, clip_end))
+                else:
+                    cmd.append("append-play start=%s" % clip_start)
+                
+                try:
+                    if p.poll() == None:
+                        f_pipe.write(" ".join(cmd) + "\n")
+                    else:
+                        break
+                except IOError as ex:
+                    if ex.errno != 32:
+                        print ex
+                    if p != None:
+                        p.kill()
+                    return
 
 def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options):
     cmd = " ".join(["grep", "-r", "-n", "-i", "--include", "\*.txt", "-P", '"' + search_phrase + '"', '"' + media_dir + '"'])
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1)
+    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, bufsize=-1)
     output, error = p.communicate()
 
     if p.returncode == 0:
