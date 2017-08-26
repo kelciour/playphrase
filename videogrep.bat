@@ -11,7 +11,7 @@ for /L %%n in (1,0,1) do (
     if /I "!phrase!"=="quit" call :stop
     if /I "!phrase!"=="exit" call :stop
 
-    python playphrase.py --input "%media_dir%" "!phrase!"
+    python playphrase.py --input %media_dir% "!phrase!"
 )
 
 :stop
