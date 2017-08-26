@@ -69,7 +69,7 @@ See [https://github.com/kelciour/playphrase/releases](https://github.com/kelciou
 
 # Usage with AudioBooks
 
-It's possible to use audiobooks as media input. For that purpose there's ```audiogrep.bat``` and ```audiogrep.sh```` files to simplify user input. But you need to generate subtitles for every audio file. It can be done almost automatically using [aeneas](https://github.com/readbeyond/aeneas). Also [csplit](https://en.wikipedia.org/wiki/Csplit) can be used to split text of the book by chapters and [Pragmatic Segmenter](https://github.com/diasks2/pragmatic_segmenter) to split chapter's content by "sentences".
+It's possible to use audiobooks as media input. For that purpose there's ```audiogrep.bat``` and ```audiogrep.sh``` files to simplify user input. But you need to generate subtitles for every audio file. It can be done almost automatically using [aeneas](https://github.com/readbeyond/aeneas). Also [csplit](https://en.wikipedia.org/wiki/Csplit) can be used to split text of the book by chapters and [Pragmatic Segmenter](https://github.com/diasks2/pragmatic_segmenter) to split chapter's content by "sentences".
 
 Here's example video how it looks like (YouTube):
 
