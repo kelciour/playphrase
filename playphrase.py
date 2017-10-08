@@ -7,6 +7,7 @@ import re
 import sys
 import subprocess
 import time
+import locale
 
 from collections import OrderedDict
 
@@ -152,7 +153,10 @@ def play_clips(clips, ending_mode, mpv_options):
                     return
 
 def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options):
-    cmd = " ".join(["grep", "-r", "-n", "-i", "--include", "\*.txt", "-P", '"' + search_phrase + '"', '"' + media_dir + '"'])
+    search_phrase = search_phrase.decode(locale.getpreferredencoding())
+    search_phrase_in_utf8_representation = repr(search_phrase.encode("UTF-8"))
+
+    cmd = " ".join(["grep", "-r", "-n", "-i", "--include", "\*\.txt", "-P", search_phrase_in_utf8_representation, '"' + media_dir + '"'])
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, bufsize=-1)
     output, error = p.communicate()
 
