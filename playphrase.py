@@ -155,30 +155,36 @@ def play_clips(clips, ending_mode, mpv_options):
 def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options):
     search_phrase = search_phrase.decode(locale.getpreferredencoding())
     search_phrase_in_utf8_representation = repr(search_phrase.encode("UTF-8"))
+    search_phrase_in_grep = "\"(?s)\(\d\d:\d\d:\d\d,\d\d\d\, \d\d:\d\d:\d\d,\d\d\d\)\\t[^\\n]*" + search_phrase_in_utf8_representation.strip("\'") + "[^\\n]*\""
 
-    cmd = " ".join(["grep", "-r", "-n", "-i", "--include", "\*\.txt", "-P", search_phrase_in_utf8_representation, '"' + media_dir + '"'])
+    cmd = " ".join(["grep", "-r", "-z", "-o", "-i", "--include", "\*\.txt", "-P", search_phrase_in_grep, '"' + media_dir + '"'])
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, bufsize=-1)
     output, error = p.communicate()
 
     if p.returncode == 0:
+        matches = output.rstrip("\x00").split("\x00")
+        
         if output_file != None:
             with open(output_file, 'w') as f_results:
-                f_results.write(output)
+                f_results.write("\n".join(matches))
 
-        matches = output.splitlines()
-        
         clips = []
         for match in matches:
             filename, line = match.split(".txt:", 1)
-            line_number, line = line.split(":", 1)
-            line_number = int(line_number)
             
-            sub_timing, sub_content = line.split("\t", 1)            
-            sub_start, sub_end = sub_timing.strip("()").split(", ")
-            
-            match_sub_start = srt_time_to_seconds(sub_start)
-            match_sub_end = srt_time_to_seconds(sub_end)
+            lines = line.splitlines()
 
+            def get_line_timings(line):
+                sub_timing, sub_content = line.split("\t", 1)            
+                sub_start, sub_end = sub_timing.strip("()").split(", ")
+                return (sub_start, sub_end)
+
+            sub_start, sub_end = get_line_timings(lines[0])
+            match_sub_start = srt_time_to_seconds(sub_start)
+            
+            sub_start, sub_end = get_line_timings(lines[-1])
+            match_sub_end = srt_time_to_seconds(sub_end)
+            
             phrase_start = match_sub_start
             phrase_end = match_sub_end
 
@@ -186,10 +192,18 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
                 with open(filename + ".txt") as f_txt:
                     txt_lines = f_txt.read().splitlines()
 
-                    txt_line_start_idx = line_number - 1
-                    txt_line_end_idx = line_number - 1
+                    def find_line_number(lines, line):
+                        for idx, lines in enumerate(lines):
+                            if line in lines:
+                                return idx + 1
 
-                    for txt_line in reversed(txt_lines[:line_number - 1]):
+                    line_number_start = find_line_number(txt_lines, lines[0])
+                    line_number_end = find_line_number(txt_lines, lines[-1])
+
+                    txt_line_start_idx = line_number_start - 1
+                    txt_line_end_idx = line_number_end - 1
+
+                    for txt_line in reversed(txt_lines[:line_number_start - 1]):
                         sub_timing, sub_content = txt_line.split("\t", 1)            
                         sub_start, sub_end = sub_timing.strip("()").split(", ")
 
@@ -202,7 +216,7 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
                         else:
                             break
 
-                    for txt_line in txt_lines[line_number:]:
+                    for txt_line in txt_lines[line_number_end:]:
                         sub_timing, sub_content = txt_line.split("\t", 1)            
                         sub_start, sub_end = sub_timing.strip("()").split(", ")
 
