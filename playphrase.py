@@ -115,19 +115,21 @@ def update_mpv_player_cmd(cmd_options, mpv_options):
 
     return cmd
 
-def get_fragment_filename(phrase, idx):
+def get_fragment_filename(phrase):
     s = phrase.strip().replace(' ', '_')
     s = s.replace('.*', '...')
     max_filename_length = 30
     if len(s) > max_filename_length:
         s = s[:max_filename_length] + "..."
-    s = s + "_" + str(idx).zfill(3)
     return re.sub(r'(?u)[^-\w\'\.]', '', s)
 
 def create_fragments(search_phrase, clips, export_mode):
     idx = 1
     for video_file, clip_start, clip_end in clips:
-        excert_filename = get_fragment_filename(search_phrase, idx)
+        fragment_filename = get_fragment_filename(search_phrase)
+
+        if len(clips) > 1:
+            fragment_filename += "_" + str(idx).zfill(3)
 
         ss = clip_start
         to = clip_end
@@ -138,12 +140,12 @@ def create_fragments(search_phrase, clips, export_mode):
         video_encoding_mode = "ultrafast"
 
         if export_mode["audio"]:
-            cmd = " ".join(["ffmpeg", "-y", "-ss", str(ss), "-i", '"' + video_file + '"', "-loglevel", "quiet", "-t", str(t), "-map", "0:a:0", "-af", af, '"' + excert_filename + ".mp3" + '"'])
+            cmd = " ".join(["ffmpeg", "-y", "-ss", str(ss), "-i", '"' + video_file + '"', "-loglevel", "quiet", "-t", str(t), "-map", "0:a:0", "-af", af, '"' + fragment_filename + ".mp3" + '"'])
             p = subprocess.Popen(cmd)
             p.wait()
 
         if export_mode["video"]:
-            cmd = " ".join(["ffmpeg", "-y", "-ss", str(ss), "-i", '"' + video_file + '"', "-strict", "-2", "-loglevel", "quiet", "-t", str(t), "-map", "0:v:0", "-map", "0:a:0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-af", af, '"' + excert_filename + ".mp4" + '"'])
+            cmd = " ".join(["ffmpeg", "-y", "-ss", str(ss), "-i", '"' + video_file + '"', "-strict", "-2", "-loglevel", "quiet", "-t", str(t), "-map", "0:v:0", "-map", "0:a:0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-af", af, '"' + fragment_filename + ".mp4" + '"'])
             p = subprocess.Popen(cmd)
             p.wait()
 
@@ -160,7 +162,7 @@ def create_fragments(search_phrase, clips, export_mode):
             vf = "\"" + "subtitles=" + srt_filename + ":force_style='" + srt_style + "',setpts=PTS-STARTPTS" + "\""
             af = "afade=t=in:st=%s:d=%s,afade=t=out:st=%s:d=%s,asetpts=PTS-STARTPTS" % (ss, t_fade, to - t_fade, t_fade)
 
-            cmd = " ".join(["ffmpeg", "-y", "-ss", str(ss), "-i", '"' + video_file + '"', "-strict", "-2", "-loglevel", "quiet", "-t", str(t), "-map", "0:v:0", "-map", "0:a:0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-vf", vf, "-af", af, "-copyts", '"' + excert_filename + ".sub.mp4" + '"'])
+            cmd = " ".join(["ffmpeg", "-y", "-ss", str(ss), "-i", '"' + video_file + '"', "-strict", "-2", "-loglevel", "quiet", "-t", str(t), "-map", "0:v:0", "-map", "0:a:0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-vf", vf, "-af", af, "-copyts", '"' + fragment_filename + ".sub.mp4" + '"'])
             p = subprocess.Popen(cmd)
             p.wait()
 
@@ -469,6 +471,7 @@ def usage():
 if __name__ == '__main__':
     os.environ["PATH"] += os.pathsep + "." + os.sep + "utils" + os.sep + "grep"
     os.environ["PATH"] += os.pathsep + "." + os.sep + "utils" + os.sep + "mpv"
+    os.environ["PATH"] += os.pathsep + "." + os.sep + "utils" + os.sep + "ffmpeg"
 
     args = parse_args(sys.argv[1:])
     if args != False:
