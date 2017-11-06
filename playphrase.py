@@ -115,6 +115,57 @@ def update_mpv_player_cmd(cmd_options, mpv_options):
 
     return cmd
 
+def get_fragment_filename(phrase, idx):
+    s = phrase.strip().replace(' ', '_')
+    s = s.replace('.*', '...')
+    max_filename_length = 30
+    if len(s) > max_filename_length:
+        s = s[:max_filename_length] + "..."
+    s = s + "_" + str(idx).zfill(3)
+    return re.sub(r'(?u)[^-\w\'\.]', '', s)
+
+def create_fragments(search_phrase, clips, export_mode):
+    idx = 1
+    for video_file, clip_start, clip_end in clips:
+        excert_filename = get_fragment_filename(search_phrase, idx)
+
+        ss = clip_start
+        to = clip_end
+        t = to - ss
+
+        t_fade = 0.2
+        af = "afade=t=in:st=%s:d=%s,afade=t=out:st=%s:d=%s" % (0, t_fade, t - t_fade, t_fade)
+        video_encoding_mode = "ultrafast"
+
+        if export_mode["audio"]:
+            cmd = " ".join(["ffmpeg", "-y", "-ss", str(ss), "-i", '"' + video_file + '"', "-loglevel", "quiet", "-t", str(t), "-map", "0:a:0", "-af", af, '"' + excert_filename + ".mp3" + '"'])
+            p = subprocess.Popen(cmd)
+            p.wait()
+
+        if export_mode["video"]:
+            cmd = " ".join(["ffmpeg", "-y", "-ss", str(ss), "-i", '"' + video_file + '"', "-strict", "-2", "-loglevel", "quiet", "-t", str(t), "-map", "0:v:0", "-map", "0:a:0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-af", af, '"' + excert_filename + ".mp4" + '"'])
+            p = subprocess.Popen(cmd)
+            p.wait()
+
+        if export_mode["video-sub"]:
+            srt_style = "FontName=Arial,FontSize=22"
+
+            srt_filename = video_file[:-4] + ".srt"
+            if srt_filename[1] == ":": # Windows
+                srt_filename = srt_filename.replace("\\", "\\\\\\\\")
+                srt_filename = srt_filename.replace(":", "\\\\:")
+                srt_filename = srt_filename.replace(",", "\\\\\\,")
+                srt_filename = srt_filename.replace("'", "\\\\\\'")
+
+            vf = "\"" + "subtitles=" + srt_filename + ":force_style='" + srt_style + "',setpts=PTS-STARTPTS" + "\""
+            af = "afade=t=in:st=%s:d=%s,afade=t=out:st=%s:d=%s,asetpts=PTS-STARTPTS" % (ss, t_fade, to - t_fade, t_fade)
+
+            cmd = " ".join(["ffmpeg", "-y", "-ss", str(ss), "-i", '"' + video_file + '"', "-strict", "-2", "-loglevel", "quiet", "-t", str(t), "-map", "0:v:0", "-map", "0:a:0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-vf", vf, "-af", af, "-copyts", '"' + excert_filename + ".sub.mp4" + '"'])
+            p = subprocess.Popen(cmd)
+            p.wait()
+
+        idx += 1
+
 def play_clips(clips, ending_mode, mpv_options):
     if len(clips) != 0:
         clip_filename, clip_start, clip_end = clips[0]
@@ -128,7 +179,7 @@ def play_clips(clips, ending_mode, mpv_options):
         with open(pipe_name, 'w'): # create pipe
             pass
 
-        p = subprocess.Popen(cmd, shell=False) # start mpv player in idle mode
+        p = subprocess.Popen(cmd) # start mpv player in idle mode
         
         with open(pipe_name, "wb", 0) as f_pipe:
             for clip_filename, clip_start, clip_end in clips:
@@ -152,7 +203,7 @@ def play_clips(clips, ending_mode, mpv_options):
                         p.kill()
                     return
 
-def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options):
+def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options, audio_mode, video_mode, video_with_sub_mode):
     search_phrase = search_phrase.decode(locale.getpreferredencoding())
     search_phrase_in_utf8_representation = repr(search_phrase.encode("UTF-8"))
     search_phrase_in_grep = "\"(?s)\(\d\d:\d\d:\d\d,\d\d\d\, \d\d:\d\d:\d\d,\d\d\d\)\\t[^\\n]*" + search_phrase_in_utf8_representation.strip("\'") + "[^\\n]*\""
@@ -269,7 +320,9 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
         if randomize_mode:
             random.shuffle(clips)
 
-        if not demo_mode:
+        if audio_mode or video_mode or video_with_sub_mode:
+            create_fragments(search_phrase, clips, {"audio": audio_mode, "video": video_mode, "video-sub": video_with_sub_mode})
+        elif not demo_mode:
             play_clips(clips, ending_mode, mpv_options)
 
     elif p.returncode == 1:
@@ -334,7 +387,7 @@ def parse_args(argv):
         print "Search phrase can't be empty"
         sys.exit()
 
-    args = {"padding": 0, "limit": 15, "output_file": None, "phrase_mode": False, "phrases_gap":1.75, "search_phrase":search_phrase, "ending_mode":False, "randomize_mode":False, "demo_mode":False, "mpv_options":""}
+    args = {"padding": 0, "limit": 60, "output_file": None, "phrase_mode": False, "phrases_gap":1.25, "search_phrase":search_phrase, "ending_mode":False, "randomize_mode":False, "demo_mode":False, "mpv_options":"", "audio_mode":False, "video_mode":False, "video_with_sub_mode":False }
     
     argv = argv[:-1]
     idx = 0
@@ -365,6 +418,12 @@ def parse_args(argv):
             args["randomize_mode"] = True
         elif argv[idx] == "--demo" or argv[idx] == "-d":
             args["demo_mode"] = True
+        elif argv[idx] == "--audio" or argv[idx] == "-a":
+            args["audio_mode"] = True
+        elif argv[idx] == "--video" or argv[idx] == "-v":
+            args["video_mode"] = True
+        elif argv[idx] == "--video-sub" or argv[idx] == "-s":
+            args["video_with_sub_mode"] = True
         elif argv[idx] == "--phrases" or argv[idx] == "-ph":
             args["phrase_mode"] = True
             if idx + 1 < len(argv):
@@ -390,18 +449,22 @@ def parse_args(argv):
     return args
 
 def usage():
-    print "python videogrep.py -i <media_dir> <phrase>"
-    print "python videogrep.py -i <media_dir> _init_"
+    print "Usage: playphrase -i <media_dir> <phrase>"
+    print ""
+    print "Init: playphrase -i <media_dir> _init_"
     print ""
     print "Additional options:"
-    print "-ph, --phrases GAP_BETWEEN_PHRASES", "\t", "move start time of the clip to the beginning of the current phrase. Value is optional (default=1.75 seconds)"
-    print "-l, --limit", "\t", "maximum duration of the phrase (default=30 seconds)"
-    print "-p, --padding", "\t", "padding in seconds to add to the start and end of each clip (default=0.0 seconds)"
-    print "-e, --ending", "\t", "play only matching lines (or phrases)"
-    print "-r, --randomize", "\t", "randomize the clips"
-    print "-o, --output", "\t", "name of the file in which output of \'grep\' command will be written"
-    print "-d, --demo", "\t", "only show grep results"
-    print "-m, --mpv-options OPTIONS", "\t", "mpv player options"
+    print "-ph, --phrases GAP_BETWEEN_PHRASES", " ", "move start time of the clip to the beginning of the current phrase. Value is optional (default=1.25 seconds)"
+    print "-l, --limit", "     ", "maximum duration of the phrase (default=60 seconds)"
+    print "-p, --padding", "   ", "padding in seconds to add to the start and end of each clip (default=0.0 seconds)"
+    print "-e, --ending", "    ", "play only matching lines (or phrases)"
+    print "-r, --randomize", " ", "randomize the clips"
+    print "-o, --output", "    ", "name of the file in which output of \'grep\' command will be written"
+    print "-d, --demo", "      ", "only show grep results"
+    print "-a, --audio", "     ", "create audio fragments"
+    print "-v, --video", "     ", "create video fragments"
+    print "-s, --video-sub", " ", "create video fragments with subtitles"
+    print "-m, --mpv-options OPTIONS", " ", "mpv player options"
 
 if __name__ == '__main__':
     os.environ["PATH"] += os.pathsep + "." + os.sep + "utils" + os.sep + "grep"
@@ -413,8 +476,8 @@ if __name__ == '__main__':
             init(args["media_dir"], args["limit"])
         else:
             if need_update(args["media_dir"]):
-                print "WARNING: number of '.srt' and '.txt' files doesn't match. Maybe you need to use 'videogrep <media_dir> _init_'."
+                print "WARNING: number of '.srt' and '.txt' files doesn't match. Maybe you need to use 'playphrase <media_dir> _init_'."
             
-            main(args["media_dir"], args["search_phrase"], args["phrase_mode"], args["phrases_gap"], args["padding"], args["limit"], args["output_file"], args["ending_mode"], args["randomize_mode"], args["demo_mode"], args["mpv_options"])
+            main(args["media_dir"], args["search_phrase"], args["phrase_mode"], args["phrases_gap"], args["padding"], args["limit"], args["output_file"], args["ending_mode"], args["randomize_mode"], args["demo_mode"], args["mpv_options"], args["audio_mode"], args["video_mode"], args["video_with_sub_mode"])
     else:
         usage()

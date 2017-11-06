@@ -43,6 +43,14 @@ randomize clips
 name of the file in which output of \'grep\' command will be written
 * ```-d, --demo``` 
 only show grep results
+* ```-a, --audio```
+create audio fragments
+* ```-v, --video```
+create video fragments
+* ```-s, --video-sub```
+create video fragments with subtitles
+* ```-m, --mpv-options OPTIONS```
+mpv player options
 
 ### Optional Configuration Changes
 
