@@ -208,7 +208,7 @@ def play_clips(clips, ending_mode, mpv_options):
 def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options, audio_mode, video_mode, video_with_sub_mode):
     search_phrase = search_phrase.decode(locale.getpreferredencoding())
     search_phrase_in_utf8_representation = repr(search_phrase.encode("UTF-8"))
-    search_phrase_in_grep = "\"(?s)\(\d\d:\d\d:\d\d,\d\d\d\, \d\d:\d\d:\d\d,\d\d\d\)\\t[^\\n]*" + search_phrase_in_utf8_representation.strip("\'") + "[^\\n]*\""
+    search_phrase_in_grep = "\"(?s)\(\d\d:\d\d:\d\d,\d\d\d\, \d\d:\d\d:\d\d,\d\d\d\)\\t[^\\n]*" + search_phrase_in_utf8_representation[1:-1] + "[^\\n]*\""
 
     cmd = " ".join(["grep", "-r", "-z", "-o", "-i", "--include", "\*\.txt", "-P", search_phrase_in_grep, '"' + media_dir + '"'])
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, bufsize=-1)
