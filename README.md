@@ -27,12 +27,14 @@ More info: [https://mpv.io/manual/stable/#keyboard-control](https://mpv.io/manua
 
 There's ```videogrep.bat``` (Windows) and ```videogrep.sh``` (Linux) files to simplify user input. First time before running edit them and update ```media_dir``` path. Use ```quit```, ```exit``` or ```q```, ```x``` to exit from the batch script.
 
+Here's a quick demo how to set up and run ```videogrep.bat``` on Windows ([YouTube](https://youtu.be/kEkXZY4LFCY)).
+
 ### Additional Options:
 
 * ```-ph, --phrases GAP_BETWEEN_PHRASES``` 
 move start time of the clip to the beginning of the current phrase. Value is optional (default=1.75 seconds)
 * ```-l, --limit``` 
-maximum duration of the phrase (default=30 seconds)
+maximum duration of the phrase (default=60 seconds)
 * ```-p, --padding``` 
 padding in seconds to add to the start and end of each clip (default=0.0 seconds)
 * ```-e, --ending``` 
