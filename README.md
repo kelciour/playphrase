@@ -48,7 +48,7 @@ create audio fragments
 * ```-v, --video```
 create video fragments
 * ```-vs, --video-sub```
-create video fragments with subtitles
+create video fragments with hardcoded subtitles
 * ```-s, --subtitles```
 create subtitles for fragments
 * ```-m, --mpv-options OPTIONS```

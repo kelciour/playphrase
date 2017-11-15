@@ -148,6 +148,12 @@ def update_mpv_player_cmd(cmd_options, mpv_options):
 
     return cmd
 
+def update_progress(progress, num, max_num):
+    width = 25
+    n = int(progress / 100.0 * width)
+    sys.stdout.write("\r %3d%% [%s%s%s] %d/%d" % (progress, "=" * n, ">", " " * (width - n), num, max_num))
+    sys.stdout.flush()
+
 def get_fragment_filename(phrase):
     s = phrase.strip().replace(' ', '_')
     s = s.replace('.*', '...')
@@ -158,6 +164,8 @@ def get_fragment_filename(phrase):
 
 def create_fragments(search_phrase, clips, export_mode):
     idx = 1
+    
+    update_progress(0, 0, len(clips))
     for video_file, clip_start, clip_end in clips:
         fragment_filename = get_fragment_filename(search_phrase)
 
@@ -205,6 +213,8 @@ def create_fragments(search_phrase, clips, export_mode):
             subs = filter_subtitles(subs, clip_start, clip_end)
             write_subtitles(fragment_filename + ".srt", subs)
 
+        update_progress(float(idx) / len(clips) * 100, idx, len(clips))
+        
         idx += 1
 
 def play_clips(clips, ending_mode, mpv_options):
@@ -498,7 +508,7 @@ def usage():
     print "-d, --demo", "       ", "only show grep results"
     print "-a, --audio", "      ", "create audio fragments"
     print "-v, --video", "      ", "create video fragments"
-    print "-vs, --video-sub", " ", "create video fragments with subtitles"
+    print "-vs, --video-sub", " ", "create video fragments with hardcoded subtitles"
     print "-s, --subtitles", "  ", "create subtitles for fragments"
     print "-m, --mpv-options OPTIONS", " ", "mpv player options"
 
