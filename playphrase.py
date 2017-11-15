@@ -79,6 +79,7 @@ def convert_into_sentences(en_subs, limit):
                 sub_content[0] != '-' and
                 sub_content[0] != '"' and
                 sub_content[0] != u'♪' and
+                sub_content[0].isupper() != True and
                 (prev_sub_content[-1] != '.' or (sub_content[0:3] == '...' or (prev_sub_content[-3:] == '...' and sub_content[0].islower()))) and 
                 prev_sub_content[-1] != '?' and
                 prev_sub_content[-1] != '!' and
