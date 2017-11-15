@@ -32,7 +32,7 @@ Here's a quick demo how to set up and run ```videogrep.bat``` on Windows ([YouTu
 ### Additional Options:
 
 * ```-ph, --phrases GAP_BETWEEN_PHRASES``` 
-move start time of the clip to the beginning of the current phrase. Value is optional (default=1.75 seconds)
+move start time of the clip to the beginning of the current phrase. Value is optional (default=1.25 seconds)
 * ```-l, --limit``` 
 maximum duration of the phrase (default=60 seconds)
 * ```-p, --padding``` 
