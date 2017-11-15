@@ -47,8 +47,10 @@ only show grep results
 create audio fragments
 * ```-v, --video```
 create video fragments
-* ```-s, --video-sub```
+* ```-vs, --video-sub```
 create video fragments with subtitles
+* ```-s, --subtitles```
+create subtitles for fragments
 * ```-m, --mpv-options OPTIONS```
 mpv player options
 
@@ -88,6 +90,7 @@ Here's example video how it looks like (YouTube):
 * python 2.7
 * grep
 * mpv
+* ffmpeg
 
 # Note
 
