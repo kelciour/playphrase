@@ -256,12 +256,28 @@ def play_clips(clips, ending_mode, mpv_options):
                         p.kill()
                     return
 
+def print_match(media_dir, filename, line, attrs={"prev_filename": None}):
+    if filename.startswith(media_dir):
+        filename = filename.replace(media_dir + os.sep, '', 1)
+
+    if attrs["prev_filename"] != filename:
+        print()
+        print('-', filename)
+        print()
+
+    attrs["prev_filename"] = filename
+
+    line = line.replace('\t', ' ')
+    print(line)
+
 def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options, audio_mode, video_mode, video_with_sub_mode, subtitles_mode):
     search_phrase_in_grep = "\"(?s)\(\d\d:\d\d:\d\d,\d\d\d\, \d\d:\d\d:\d\d,\d\d\d\)\\t[^\\n]*" + search_phrase + "[^\\n]*\""
 
     cmd = " ".join(["grep", "-r", "-z", "-o", "-i", "--include", "*.txt", "-P", search_phrase_in_grep, '"' + media_dir + '"'])
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, bufsize=-1)
     output, error = p.communicate()
+
+    media_dir = os.path.abspath(media_dir).replace('\\', '/').replace('/', os.sep)
 
     if p.returncode == 0:
         matches = output.rstrip("\x00").split("\x00")
@@ -273,7 +289,12 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
         clips = []
         for match in matches:
             filename, line = match.split(".txt:", 1)
-            
+
+            filename = os.path.abspath(filename).replace('\\', '/').replace('/', os.sep)
+
+            if demo_mode:
+                print_match(media_dir, filename, line)
+
             lines = line.split('\n')
 
             def get_line_timings(line):
@@ -359,13 +380,16 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
             for ext in movie_extensions:
                 movie_filename = filename + "." + ext
                 if os.path.isfile(movie_filename):
-                    clips.append((os.path.abspath(movie_filename), phrase_start - padding, phrase_end + padding))
+                    clips.append((movie_filename, phrase_start - padding, phrase_end + padding))
                     break
+
+        if demo_mode:
+            print()
 
         if phrase_mode:
             print("Number of matches:", len(clips))
             clips = list(OrderedDict.fromkeys(clips)) # delete dublicates
-        
+
         print("Number of clips:", len(clips))
         
         if randomize_mode:
