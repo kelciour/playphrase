@@ -88,8 +88,8 @@ Here's example video how it looks like (YouTube):
 
 # Requirements
 
-* python 2.7
-* grep
+* python 3
+* grep or [ripgrep](https://github.com/BurntSushi/ripgrep) (for non-ASCII languages)
 * mpv
 * ffmpeg
 
