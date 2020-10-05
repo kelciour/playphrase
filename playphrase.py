@@ -428,7 +428,7 @@ def parse_args(argv):
     search_phrase = argv[-1]
     if len(search_phrase) == 0:
         print("Search phrase can't be empty")
-        sys.exit()
+        sys.exit(1)
 
     args = {"padding": 0, "limit": 60, "output_file": None, "phrase_mode": False, "phrases_gap":1.25, "search_phrase":search_phrase, "ending_mode":False, "randomize_mode":False, "demo_mode":False, "mpv_options":"", "audio_mode":False, "video_mode":False, "video_with_sub_mode":False, "subtitles_mode":False }
     
@@ -493,7 +493,17 @@ def parse_args(argv):
     
     return args
 
-def usage():
+def validate_args(args):
+    if not os.path.isdir(args["media_dir"]):
+        print("ERROR: '{}' is not a folder".format(args["media_dir"]))
+        return False
+    if args["output_file"]:
+        if os.path.isdir(args["output_file"]):
+            print("ERROR: '{}' can't be a folder".format(args["output_file"]))
+            return False
+    return True
+
+def print_usage():
     print("Usage: playphrase -i <media_dir> <phrase>")
     print()
     print("Init: playphrase -i <media_dir> _init_")
@@ -521,13 +531,16 @@ if __name__ == '__main__':
         os.environ["LC_ALL"] = "en_US.utf8"
 
     args = parse_args(sys.argv[1:])
-    if args != False:
+
+    if args == False:
+        print_usage()
+        sys.exit(1)
+
+    if validate_args(args):
         if args["search_phrase"] == "_init_":
             init(args["media_dir"], args["limit"])
         else:
             if need_update(args["media_dir"]):
-                print("WARNING: number of '.srt' and '.txt' files doesn't match. Maybe you need to use 'playphrase <media_dir> _init_'.")
+                print("WARNING: number of '.srt' and '.txt' files doesn't match. Maybe use 'playphrase -i <media_dir> _init_'.")
             
             main(args["media_dir"], args["search_phrase"], args["phrase_mode"], args["phrases_gap"], args["padding"], args["limit"], args["output_file"], args["ending_mode"], args["randomize_mode"], args["demo_mode"], args["mpv_options"], args["audio_mode"], args["video_mode"], args["video_with_sub_mode"], args["subtitles_mode"])
-    else:
-        usage()
