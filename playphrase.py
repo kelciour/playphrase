@@ -517,6 +517,9 @@ if __name__ == '__main__':
     os.environ["PATH"] += os.pathsep + "." + os.sep + "utils" + os.sep + "mpv"
     os.environ["PATH"] += os.pathsep + "." + os.sep + "utils" + os.sep + "ffmpeg"
 
+    if "LC_ALL" not in os.environ:
+        os.environ["LC_ALL"] = "en_US.utf8"
+
     args = parse_args(sys.argv[1:])
     if args != False:
         if args["search_phrase"] == "_init_":
