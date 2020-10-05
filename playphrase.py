@@ -271,9 +271,9 @@ def print_match(media_dir, filename, line, attrs={"prev_filename": None}):
     print(line)
 
 def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options, audio_mode, video_mode, video_with_sub_mode, subtitles_mode):
-    search_phrase_in_grep = "\"(?s)\(\d\d:\d\d:\d\d,\d\d\d\, \d\d:\d\d:\d\d,\d\d\d\)\\t[^\\n]*" + search_phrase + "[^\\n]*\""
+    search_phrase_in_grep = "(?s)\(\d\d:\d\d:\d\d,\d\d\d\, \d\d:\d\d:\d\d,\d\d\d\)\\t[^\\n]*" + search_phrase + "[^\\n]*"
 
-    cmd = " ".join(["grep", "-r", "-z", "-o", "-i", "--include", "*.txt", "-P", search_phrase_in_grep, '"' + media_dir + '"'])
+    cmd = ["grep", "-r", "-z", "-o", "-i", "--include", "*.txt", "-P", search_phrase_in_grep, media_dir]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, bufsize=-1)
     output, error = p.communicate()
 
