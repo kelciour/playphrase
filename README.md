@@ -10,40 +10,39 @@ Inspired by [videogrep](http://lav.io/2014/06/videogrep-automatic-supercuts-with
 
 # Usage
 
-Run ```python playphrase.py -i <media_dir> _init_``` to generate txt files from srt files that will be used for search (only the first time or when you add new movies in your folder).
+At first, run ```python playphrase.py -i <media_dir> _init_``` to generate txt files from srt files that will be used for searching (only the first time or when you add a new movie in the media folder).
 
-After that use 
-```python playphrase.py -i <media_dir> <phrase>```
+After that, use ```python playphrase.py -i <media_dir> <phrase>```
 
-Regular expressions can be used in search, for example, \b for word boundary.
+Regular expressions can be used too, for example, \b for word boundary.
 
 ### Keyboard Shortcuts 
 
-Use ```Enter``` to move to the next clip or ```Shift + <``` and ```Shift + >``` to switch between clips, ```Ctrl + Left``` and ```Ctrl + Right``` to move to the prev/next subtitle, ```q``` to close video player.
+Use ```Enter``` to move to the next clip or ```Shift + <``` and ```Shift + >``` to switch between clips, ```Ctrl + Left``` and ```Ctrl + Right``` to move to the prev/next subtitle, ```q``` to close the video player.
 
 More info: [https://mpv.io/manual/stable/#keyboard-control](https://mpv.io/manual/master/#keyboard-control)
 
 ### Batch Scripts
 
-There's ```videogrep.bat``` (Windows) and ```videogrep.sh``` (Linux) files to simplify user input. First time before running edit them and update ```media_dir``` path. Use ```quit```, ```exit``` or ```q```, ```x``` to exit from the batch script.
+The repository contains ```videogrep.bat``` (Windows) and ```videogrep.sh``` (Linux) files to simplify the user input. Before running it for the first time, edit the file in a text editor and update ```media_dir``` path. Use ```quit```, ```exit``` or ```q```, ```x``` to exit from the batch script.
 
 Here's a quick demo how to set up and run ```videogrep.bat``` on Windows ([YouTube](https://youtu.be/kEkXZY4LFCY)).
 
 ### Additional Options:
 
-* ```-ph, --phrases GAP_BETWEEN_PHRASES``` 
-move start time of the clip to the beginning of the current phrase. Value is optional (default=1.25 seconds)
-* ```-l, --limit``` 
-maximum duration of the phrase (default=60 seconds)
-* ```-p, --padding``` 
-padding in seconds to add to the start and end of each clip (default=0.0 seconds)
-* ```-e, --ending``` 
+* ```-ph GAP_BETWEEN_PHRASES, --phrases```
+move the start time of the clip to the beginning of the current phrase (default=1.25 seconds)
+* ```-l SECONDS, --limit```
+maximum phrase's duration (default=60 seconds)
+* ```-p SECONDS, --padding```
+padding in seconds to add to the start and the end of each clip (default=0.0 seconds)
+* ```-e SECONDS, --ending```
 play only matching lines (or phrases)
-* ```-r, --randomize``` 
-randomize clips
-* ```-o, --output``` 
-name of the file in which output of \'grep\' command will be written
-* ```-d, --demo``` 
+* ```-r, --randomize```
+randomize the clips
+* ```-o FILENAME, --output```
+write the \'grep\' output to the file
+* ```-d, --demo```
 only show grep results
 * ```-a, --audio```
 create audio fragments
@@ -53,7 +52,7 @@ create video fragments
 create video fragments with hardcoded subtitles
 * ```-s, --subtitles```
 create subtitles for fragments
-* ```-m, --mpv-options OPTIONS```
+* ```-m OPTIONS, --mpv-options```
 mpv player options
 
 ### Optional Configuration Changes
