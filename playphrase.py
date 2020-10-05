@@ -274,7 +274,7 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
         for match in matches:
             filename, line = match.split(".txt:", 1)
             
-            lines = line.splitlines()
+            lines = line.split('\n')
 
             def get_line_timings(line):
                 sub_timing, sub_content = line.split("\t", 1)
