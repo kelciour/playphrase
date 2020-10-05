@@ -33,17 +33,18 @@ def seconds_to_srt_time(time):
     return '%02d:%02d:%02d,%03d' % get_time_parts(time)
 
 def read_subtitles(file_path):
-    content = open(file_path, 'rU').read()
-    
-    if content[:3]=='\xef\xbb\xbf': # with bom
+    content = open(file_path, 'rb').read()
+
+    if content[:3] == b'\xef\xbb\xbf': # with bom
         content = content[3:]
-    
+
     ret_code, content = convert_to_unicode(content)
     if ret_code == False:
         sys.exit(1)
 
     subs = []
-    
+    content = content.replace('\r\n', '\n')
+    content = content.replace('\r', '\n')
     content = re.sub('\n\n+', '\n\n', content)
     for sub in content.strip().split('\n\n'):
         sub_chunks = sub.split('\n')
@@ -78,15 +79,15 @@ def convert_into_sentences(en_subs, limit):
             if ((sub_start - prev_sub_end) <= 2 and (sub_end - prev_sub_start) < limit and 
                 sub_content[0] != '-' and
                 sub_content[0] != '"' and
-                sub_content[0] != u'♪' and
+                sub_content[0] != '♪' and
                 sub_content[0].isupper() != True and
                 (prev_sub_content[-1] != '.' or (sub_content[0:3] == '...' or (prev_sub_content[-3:] == '...' and sub_content[0].islower()))) and 
                 prev_sub_content[-1] != '?' and
                 prev_sub_content[-1] != '!' and
                 prev_sub_content[-1] != ']' and
                 prev_sub_content[-1] != ')' and
-                prev_sub_content[-1] != u'♪' and
-                prev_sub_content[-1] != u'”' and
+                prev_sub_content[-1] != '♪' and
+                prev_sub_content[-1] != '”' and
                 prev_sub_content[-1] != '"'):
 
                 subs[-1] = (prev_sub_start, sub_end, prev_sub_content + " " + sub_content)
@@ -114,19 +115,19 @@ def filter_subtitles(subs, clip_start, clip_end):
     return subs_filtered
 
 def write_subtitles(filename, subs):
-    f = open(filename, 'w')
+    f = open(filename, 'w', encoding='utf-8')
 
     if filename.endswith('.srt'):
         for idx in range(len(subs)):
             f.write(str(idx+1) + "\n")
             f.write(seconds_to_srt_time(subs[idx][0]) + " --> " + seconds_to_srt_time(subs[idx][1]) + "\n")
-            f.write(subs[idx][2].encode('utf-8') + "\n")
+            f.write(subs[idx][2] + "\n")
             f.write("\n")
     else:
         for idx in range(len(subs)):
             f.write("(%s, %s)" % (seconds_to_srt_time(subs[idx][0]), seconds_to_srt_time(subs[idx][1])))
             f.write("\t")
-            f.write(subs[idx][2].encode('utf-8'))
+            f.write(subs[idx][2])
             f.write("\n")
         
     f.close()
@@ -244,23 +245,22 @@ def play_clips(clips, ending_mode, mpv_options):
                 
                 try:
                     if p.poll() == None:
-                        f_pipe.write(" ".join(cmd) + "\n")
+                        msg = " ".join(cmd) + "\n"
+                        f_pipe.write(msg.encode('utf-8'))
                     else:
                         break
                 except IOError as ex:
                     if ex.errno != 32:
-                        print ex
+                        print(ex)
                     if p != None:
                         p.kill()
                     return
 
 def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options, audio_mode, video_mode, video_with_sub_mode, subtitles_mode):
-    search_phrase = search_phrase.decode(locale.getpreferredencoding())
-    search_phrase_in_utf8_representation = repr(search_phrase.encode("UTF-8"))
-    search_phrase_in_grep = "\"(?s)\(\d\d:\d\d:\d\d,\d\d\d\, \d\d:\d\d:\d\d,\d\d\d\)\\t[^\\n]*" + search_phrase_in_utf8_representation[1:-1] + "[^\\n]*\""
+    search_phrase_in_grep = "\"(?s)\(\d\d:\d\d:\d\d,\d\d\d\, \d\d:\d\d:\d\d,\d\d\d\)\\t[^\\n]*" + search_phrase + "[^\\n]*\""
 
-    cmd = " ".join(["grep", "-r", "-z", "-o", "-i", "--include", "\*\.txt", "-P", search_phrase_in_grep, '"' + media_dir + '"'])
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, bufsize=-1)
+    cmd = " ".join(["grep", "-r", "-z", "-o", "-i", "--include", "*.txt", "-P", search_phrase_in_grep, '"' + media_dir + '"'])
+    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, bufsize=-1)
     output, error = p.communicate()
 
     if p.returncode == 0:
@@ -277,7 +277,7 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
             lines = line.splitlines()
 
             def get_line_timings(line):
-                sub_timing, sub_content = line.split("\t", 1)            
+                sub_timing, sub_content = line.split("\t", 1)
                 sub_start, sub_end = sub_timing.strip("()").split(", ")
                 return (sub_start, sub_end)
 
@@ -363,10 +363,10 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
                     break
 
         if phrase_mode:
-            print "Number of matches:", len(clips)
+            print("Number of matches:", len(clips))
             clips = list(OrderedDict.fromkeys(clips)) # delete dublicates
         
-        print "Number of clips:", len(clips)
+        print("Number of clips:", len(clips))
         
         if randomize_mode:
             random.shuffle(clips)
@@ -377,9 +377,9 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
             play_clips(clips, ending_mode, mpv_options)
 
     elif p.returncode == 1:
-        print "'%s' is not found in '%s'" % (search_phrase, media_dir)
+        print("'%s' is not found in '%s'" % (search_phrase, media_dir))
     else:
-        print '%s' % error
+        print('%s' % error)
 
 def need_update(media_dir):
     srt_counter = 0
@@ -404,7 +404,7 @@ def convert_to_unicode(file_content):
         except UnicodeDecodeError:
             pass
 
-    print "ERROR: Unknown encoding. Use srt file with 'utf-8' encoding."
+    print("ERROR: Unknown encoding. Use srt file with 'utf-8' encoding.")
     return (False, file_content)
 
 def init(media_dir, limit):
@@ -414,7 +414,7 @@ def init(media_dir, limit):
             if file_ext == "srt":
                 file_path = os.path.join(root, file)
 
-                print file_path
+                print(file_path)
 
                 subs = read_subtitles(file_path)
                 subs = convert_into_sentences(subs, limit)
@@ -427,7 +427,7 @@ def parse_args(argv):
 
     search_phrase = argv[-1]
     if len(search_phrase) == 0:
-        print "Search phrase can't be empty"
+        print("Search phrase can't be empty")
         sys.exit()
 
     args = {"padding": 0, "limit": 60, "output_file": None, "phrase_mode": False, "phrases_gap":1.25, "search_phrase":search_phrase, "ending_mode":False, "randomize_mode":False, "demo_mode":False, "mpv_options":"", "audio_mode":False, "video_mode":False, "video_with_sub_mode":False, "subtitles_mode":False }
@@ -494,23 +494,23 @@ def parse_args(argv):
     return args
 
 def usage():
-    print "Usage: playphrase -i <media_dir> <phrase>"
-    print ""
-    print "Init: playphrase -i <media_dir> _init_"
-    print ""
-    print "Additional options:"
-    print "-ph, --phrases GAP_BETWEEN_PHRASES", " ", "move start time of the clip to the beginning of the current phrase. Value is optional (default=1.25 seconds)"
-    print "-l, --limit", "      ", "maximum duration of the phrase (default=60 seconds)"
-    print "-p, --padding", "    ", "padding in seconds to add to the start and end of each clip (default=0.0 seconds)"
-    print "-e, --ending", "     ", "play only matching lines (or phrases)"
-    print "-r, --randomize", "  ", "randomize the clips"
-    print "-o, --output", "     ", "name of the file in which output of \'grep\' command will be written"
-    print "-d, --demo", "       ", "only show grep results"
-    print "-a, --audio", "      ", "create audio fragments"
-    print "-v, --video", "      ", "create video fragments"
-    print "-vs, --video-sub", " ", "create video fragments with hardcoded subtitles"
-    print "-s, --subtitles", "  ", "create subtitles for fragments"
-    print "-m, --mpv-options OPTIONS", " ", "mpv player options"
+    print("Usage: playphrase -i <media_dir> <phrase>")
+    print()
+    print("Init: playphrase -i <media_dir> _init_")
+    print()
+    print("Additional options:")
+    print("-ph, --phrases GAP_BETWEEN_PHRASES", " ", "move start time of the clip to the beginning of the current phrase. Value is optional (default=1.25 seconds)")
+    print("-l, --limit", "      ", "maximum duration of the phrase (default=60 seconds)")
+    print("-p, --padding", "    ", "padding in seconds to add to the start and end of each clip (default=0.0 seconds)")
+    print("-e, --ending", "     ", "play only matching lines (or phrases)")
+    print("-r, --randomize", "  ", "randomize the clips")
+    print("-o, --output", "     ", "name of the file in which output of \'grep\' command will be written")
+    print("-d, --demo", "       ", "only show grep results")
+    print("-a, --audio", "      ", "create audio fragments")
+    print("-v, --video", "      ", "create video fragments")
+    print("-vs, --video-sub", " ", "create video fragments with hardcoded subtitles")
+    print("-s, --subtitles", "  ", "create subtitles for fragments")
+    print("-m, --mpv-options OPTIONS", " ", "mpv player options")
 
 if __name__ == '__main__':
     os.environ["PATH"] += os.pathsep + "." + os.sep + "utils" + os.sep + "grep"
@@ -523,7 +523,7 @@ if __name__ == '__main__':
             init(args["media_dir"], args["limit"])
         else:
             if need_update(args["media_dir"]):
-                print "WARNING: number of '.srt' and '.txt' files doesn't match. Maybe you need to use 'playphrase <media_dir> _init_'."
+                print("WARNING: number of '.srt' and '.txt' files doesn't match. Maybe you need to use 'playphrase <media_dir> _init_'.")
             
             main(args["media_dir"], args["search_phrase"], args["phrase_mode"], args["phrases_gap"], args["padding"], args["limit"], args["output_file"], args["ending_mode"], args["randomize_mode"], args["demo_mode"], args["mpv_options"], args["audio_mode"], args["video_mode"], args["video_with_sub_mode"], args["subtitles_mode"])
     else:
