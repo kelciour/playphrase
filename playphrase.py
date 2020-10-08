@@ -164,7 +164,7 @@ def get_fragment_filename(phrase):
         s = s[:max_filename_length] + "..."
     return re.sub(r'(?u)[^-\w\'\.]', '', s)
 
-def create_fragments(search_phrase, clips, export_mode):
+def create_fragments(search_phrase, clips, export_mode, output_dir):
     idx = 1
     
     update_progress(0, 0, len(clips))
@@ -173,6 +173,8 @@ def create_fragments(search_phrase, clips, export_mode):
 
         if len(clips) > 1:
             fragment_filename += "_" + str(idx).zfill(3)
+
+        fragment_filename = os.path.join(output_dir, fragment_filename)
 
         ss = clip_start
         to = clip_end
@@ -271,7 +273,7 @@ def print_match(media_dir, filename, line, attrs={"prev_filename": None}):
     line = line.replace('\t', ' ')
     print(line)
 
-def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_file, ending_mode, randomize_mode, demo_mode, mpv_options, audio_mode, video_mode, video_with_sub_mode, subtitles_mode):
+def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, output_dir, grep_file, ending_mode, randomize_mode, demo_mode, mpv_options, audio_mode, video_mode, video_with_sub_mode, subtitles_mode):
     search_phrase_in_grep = "(?s)\(\d\d:\d\d:\d\d,\d\d\d\, \d\d:\d\d:\d\d,\d\d\d\)\\t[^\\n]*" + search_phrase + "[^\\n]*"
 
     rg = shutil.which('rg')
@@ -287,8 +289,8 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
     if p.returncode == 0:
         matches = output.rstrip("\x00").split("\x00")
 
-        if output_file != None:
-            with open(output_file, 'w') as f_results:
+        if grep_file != None:
+            with open(grep_file, 'w') as f_results:
                 f_results.write("\n".join(matches))
 
         clips = []
@@ -401,7 +403,7 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
             random.shuffle(clips)
 
         if audio_mode or video_mode or video_with_sub_mode or subtitles_mode:
-            create_fragments(search_phrase, clips, {"audio": audio_mode, "video": video_mode, "video-sub": video_with_sub_mode, "subtitles": subtitles_mode})
+            create_fragments(search_phrase, clips, {"audio": audio_mode, "video": video_mode, "video-sub": video_with_sub_mode, "subtitles": subtitles_mode}, output_dir)
         elif not demo_mode:
             play_clips(clips, ending_mode, mpv_options)
 
@@ -459,7 +461,7 @@ def parse_args(argv):
         print("Search phrase can't be empty")
         sys.exit(1)
 
-    args = {"padding": 0, "limit": 60, "output_file": None, "phrase_mode": False, "phrases_gap":1.25, "search_phrase":search_phrase, "ending_mode":False, "randomize_mode":False, "demo_mode":False, "mpv_options":"", "audio_mode":False, "video_mode":False, "video_with_sub_mode":False, "subtitles_mode":False }
+    args = {"padding": 0, "limit": 60, "output_dir": ".", "grep_file": None, "phrase_mode": False, "phrases_gap":1.25, "search_phrase":search_phrase, "ending_mode":False, "randomize_mode":False, "demo_mode":False, "mpv_options":"", "audio_mode":False, "video_mode":False, "video_with_sub_mode":False, "subtitles_mode":False }
     
     argv = argv[:-1]
     idx = 0
@@ -479,10 +481,15 @@ def parse_args(argv):
                 return False
             args["limit"] = int(argv[idx + 1])
             idx += 1
+        elif argv[idx] == "--grep-output" or argv[idx] == "-g":
+            if idx + 1 >= len(argv):
+                return False
+            args["grep_file"] = argv[idx + 1]
+            idx += 1
         elif argv[idx] == "--output" or argv[idx] == "-o":
             if idx + 1 >= len(argv):
                 return False
-            args["output_file"] = argv[idx + 1]
+            args["output_dir"] = os.path.abspath(argv[idx + 1])
             idx += 1
         elif argv[idx] == "--ending" or argv[idx] == "-e":
             args["ending_mode"] = True
@@ -526,9 +533,12 @@ def validate_args(args):
     if not os.path.isdir(args["media_dir"]):
         print("ERROR: '{}' is not a folder".format(args["media_dir"]))
         return False
-    if args["output_file"]:
-        if os.path.isdir(args["output_file"]):
-            print("ERROR: '{}' can't be a folder".format(args["output_file"]))
+    if not os.path.isdir(args["output_dir"]):
+        print("ERROR: '{}' is not a folder".format(args["output_dir"]))
+        return False
+    if args["grep_file"]:
+        if os.path.isdir(args["grep_file"]):
+            print("ERROR: '{}' can't be a folder".format(args["grep_file"]))
             return False
     return True
 
@@ -543,7 +553,8 @@ def print_usage():
     print("-p SECONDS, --padding", "     ", "padding in seconds to add to the start and the end of each clip (default=0.0 seconds)")
     print("-e SECONDS, --ending", "      ", "play only matching lines (or phrases)")
     print("-r, --randomize", "           ", "randomize the clips")
-    print("-o FILENAME, --output", "     ", "write the 'grep' output to the file")
+    print("-o DIRNAME, --output", "  ", "the output folder for audio or video fragments")
+    print("-g FILENAME, --grep-output", "         ", "write the 'grep' output to the file")
     print("-d, --demo", "                ", "only show grep results")
     print("-a, --audio", "               ", "create audio fragments")
     print("-v, --video", "               ", "create video fragments")
@@ -572,4 +583,4 @@ if __name__ == '__main__':
             if need_update(args["media_dir"]):
                 print("WARNING: number of '.srt' and '.txt' files doesn't match. Maybe use 'playphrase -i <media_dir> _init_'.")
             
-            main(args["media_dir"], args["search_phrase"], args["phrase_mode"], args["phrases_gap"], args["padding"], args["limit"], args["output_file"], args["ending_mode"], args["randomize_mode"], args["demo_mode"], args["mpv_options"], args["audio_mode"], args["video_mode"], args["video_with_sub_mode"], args["subtitles_mode"])
+            main(args["media_dir"], args["search_phrase"], args["phrase_mode"], args["phrases_gap"], args["padding"], args["limit"], args["output_dir"], args["grep_file"], args["ending_mode"], args["randomize_mode"], args["demo_mode"], args["mpv_options"], args["audio_mode"], args["video_mode"], args["video_with_sub_mode"], args["subtitles_mode"])
