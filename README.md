@@ -30,28 +30,30 @@ Here's a quick demo how to set up and run ```videogrep.bat``` on Windows ([YouTu
 
 ### Additional Options:
 
-* ```-ph GAP_BETWEEN_PHRASES, --phrases```
-move the start time of the clip to the beginning of the current phrase (default=1.25 seconds)
-* ```-l SECONDS, --limit```
-maximum phrase's duration (default=60 seconds)
 * ```-p SECONDS, --padding```
 padding in seconds to add to the start and the end of each clip (default=0.0 seconds)
 * ```-e SECONDS, --ending```
 play only matching lines (or phrases)
 * ```-r, --randomize```
 randomize the clips
-* ```-o FILENAME, --output```
-write the \'grep\' output to the file
-* ```-d, --demo```
-only show grep results
 * ```-a, --audio```
 create audio fragments
 * ```-v, --video```
 create video fragments
+* ```-s, --subtitles```
+create subtitles
 * ```-vs, --video-sub```
 create video fragments with hardcoded subtitles
-* ```-s, --subtitles```
-create subtitles for fragments
+* ```-o DIRNAME, --output```
+the output folder for audio and video fragments (default=.)
+* ```-d, --demo```
+only show grep results
+* ```-g FILENAME, --grep-output```
+write the \'grep\' output to the file
+* ```-ph GAP_BETWEEN_PHRASES, --phrases```
+move the start time of the clip to the beginning of the current phrase (default=1.25 seconds)
+* ```-l SECONDS, --limit```
+maximum phrase\'s duration (default=60 seconds)
 * ```-m OPTIONS, --mpv-options```
 mpv player options
 
