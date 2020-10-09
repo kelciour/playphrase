@@ -494,6 +494,8 @@ def parse_args(argv):
             if idx + 1 >= len(argv):
                 return False
             args["output_dir"] = os.path.abspath(argv[idx + 1])
+            if not os.path.exists(args["output_dir"]):
+                os.makedirs(args["output_dir"])
             idx += 1
         elif argv[idx] == "--ending" or argv[idx] == "-e":
             args["ending_mode"] = True
@@ -537,9 +539,10 @@ def validate_args(args):
     if not os.path.isdir(args["media_dir"]):
         print("ERROR: '{}' is not a folder".format(args["media_dir"]))
         return False
-    if not os.path.isdir(args["output_dir"]):
-        print("ERROR: '{}' is not a folder".format(args["output_dir"]))
-        return False
+    if args["output_dir"]:
+        if os.path.exists(args["output_dir"]) and not os.path.isdir(args["output_dir"]):
+            print("ERROR: '{}' is not a folder".format(args["output_dir"]))
+            return False
     if args["grep_file"]:
         if os.path.isdir(args["grep_file"]):
             print("ERROR: '{}' can't be a folder".format(args["grep_file"]))
