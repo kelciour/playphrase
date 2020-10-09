@@ -164,6 +164,13 @@ def get_fragment_filename(phrase):
         s = s[:max_filename_length] + "..."
     return re.sub(r'(?u)[^-\w\'\.]', '', s)
 
+def subprocess_call(args):
+    try:
+        output = subprocess.check_output(args, stderr=subprocess.STDOUT, universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        print("\n\n", e.output)
+        sys.exit(1)
+
 def create_fragments(search_phrase, clips, export_mode, output_dir):
     idx = 1
     
@@ -185,14 +192,12 @@ def create_fragments(search_phrase, clips, export_mode, output_dir):
         video_encoding_mode = "ultrafast"
 
         if export_mode["audio"]:
-            cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-loglevel", "quiet", "-t", str(t), "-af", af, fragment_filename + ".mp3"]
-            p = subprocess.Popen(cmd)
-            p.wait()
+            cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-t", str(t), "-af", af, fragment_filename + ".mp3"]
+            subprocess_call(cmd)
 
         if export_mode["video"]:
-            cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-strict", "-2", "-loglevel", "quiet", "-t", str(t), "-map", "0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-af", af, fragment_filename + ".mp4"]
-            p = subprocess.Popen(cmd)
-            p.wait()
+            cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-strict", "-2", "-t", str(t), "-map", "0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-af", af, fragment_filename + ".mp4"]
+            subprocess_call(cmd)
 
         if export_mode["video-sub"]:
             srt_style = "FontName=Arial,FontSize=22"
@@ -204,12 +209,11 @@ def create_fragments(search_phrase, clips, export_mode, output_dir):
                 srt_filename = srt_filename.replace(",", "\\\\\\,")
                 srt_filename = srt_filename.replace("'", "\\\\\\'")
 
-            vf = "\"" + "subtitles=" + srt_filename + ":force_style='" + srt_style + "',setpts=PTS-STARTPTS" + "\""
+            vf = "subtitles=" + srt_filename + ":force_style='" + srt_style + "',setpts=PTS-STARTPTS"
             af = "afade=t=in:st=%s:d=%s,afade=t=out:st=%s:d=%s,asetpts=PTS-STARTPTS" % (ss, t_fade, to - t_fade, t_fade)
 
-            cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-strict", "-2", "-loglevel", "quiet", "-t", str(t), "-map", "0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-vf", vf, "-af", af, "-copyts", fragment_filename + ".sub.mp4"]
-            p = subprocess.Popen(cmd)
-            p.wait()
+            cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-strict", "-2", "-t", str(t), "-map", "0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-vf", vf, "-af", af, "-copyts", fragment_filename + ".sub.mp4"]
+            subprocess_call(cmd)
 
         if export_mode["subtitles"]:
             subtitles_filename = video_file.rsplit('.', 1)[0] + ".srt"
