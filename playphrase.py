@@ -189,7 +189,7 @@ def create_fragments(search_phrase, clips, export_mode, output_dir):
 
         t_fade = 0.2
         af = "afade=t=in:st=%s:d=%s,afade=t=out:st=%s:d=%s" % (0, t_fade, t - t_fade, t_fade)
-        video_encoding_mode = "ultrafast"
+        video_encoding_mode = "medium"
 
         if export_mode["audio"]:
             cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-t", str(t), "-af", af, fragment_filename + ".mp3"]
