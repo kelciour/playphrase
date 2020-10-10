@@ -196,7 +196,7 @@ def create_fragments(search_phrase, clips, export_mode, output_dir):
             subprocess_call(cmd)
 
         if export_mode["video"]:
-            cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-strict", "-2", "-t", str(t), "-map", "0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-af", af, fragment_filename + ".mp4"]
+            cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-strict", "-2", "-t", str(t), "-map", "0:v", "-map", "0:a", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-af", af, fragment_filename + ".mp4"]
             subprocess_call(cmd)
 
         if export_mode["video-sub"]:
@@ -212,7 +212,7 @@ def create_fragments(search_phrase, clips, export_mode, output_dir):
             vf = "subtitles=" + srt_filename + ":force_style='" + srt_style + "',setpts=PTS-STARTPTS"
             af = "afade=t=in:st=%s:d=%s,afade=t=out:st=%s:d=%s,asetpts=PTS-STARTPTS" % (ss, t_fade, to - t_fade, t_fade)
 
-            cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-strict", "-2", "-t", str(t), "-map", "0", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-vf", vf, "-af", af, "-copyts", fragment_filename + ".sub.mp4"]
+            cmd = ["ffmpeg", "-y", "-ss", str(ss), "-i", video_file, "-strict", "-2", "-t", str(t), "-map", "0:v", "-map", "0:a", "-c:v", "libx264", "-preset", video_encoding_mode, "-c:a", "aac", "-ac", "2", "-vf", vf, "-af", af, "-copyts", fragment_filename + ".sub.mp4"]
             subprocess_call(cmd)
 
         if export_mode["subtitles"]:
