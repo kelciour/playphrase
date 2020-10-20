@@ -282,7 +282,7 @@ def main(media_dir, search_phrase, phrase_mode, phrases_gap, padding, limit, out
 
     rg = shutil.which('rg')
     if rg:
-        cmd = ["rg", "--no-heading", "--null-data", "-N", "-o", "-i", "-g", "*.txt", "-P", search_phrase_in_grep, media_dir]
+        cmd = ["rg", "--sort-files", "--no-heading", "--null-data", "-N", "-o", "-i", "-g", "*.txt", "-P", search_phrase_in_grep, media_dir]
     else:
         cmd = ["grep", "-r", "-z", "-o", "-i", "--include", "*.txt", "-P", search_phrase_in_grep, media_dir]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, bufsize=-1)
