@@ -238,7 +238,7 @@ def play_clips(clips, ending_mode, mpv_options):
         with open(pipe_name, 'w'): # create pipe
             pass
 
-        p = subprocess.Popen(cmd) # start mpv player in idle mode
+        p = subprocess.check_call(cmd) # start mpv player in idle mode
         
         with open(pipe_name, "wb", 0) as f_pipe:
             for clip_filename, clip_start, clip_end in clips:
