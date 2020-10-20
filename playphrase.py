@@ -243,6 +243,7 @@ def play_clips(clips, ending_mode, mpv_options):
         with open(pipe_name, "wb", 0) as f_pipe:
             for clip_filename, clip_start, clip_end in clips:
                 clip_filename = clip_filename.replace("\\","/")
+                clip_filename = clip_filename.replace("\"", "\\\"")
                 
                 cmd = ["loadfile", '"' + clip_filename + '"']
                 if ending_mode:
